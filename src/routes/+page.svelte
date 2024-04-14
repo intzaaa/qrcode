@@ -1,32 +1,47 @@
 <script lang="ts">
 	import 'large-small-dynamic-viewport-units-polyfill';
+	// @ts-ignore
 	import QrCode from 'svelte-qrcode';
-	let area;
-	let value;
+	let inputValue: string = '';
+	$: data = writeData(inputValue);
+
+	function readData() {
+		const url = new URL(globalThis.window.location.href);
+		inputValue = decode(url.searchParams.get('data') || '');
+	}
+	readData();
+
+	function writeData(data: string): string {
+		const url = new URL(globalThis.window.location.href);
+		url.searchParams.set('data', encode(data || ''));
+		return url.toString();
+	}
+	function encode(str: string): string {
+		return encodeURIComponent(str);
+	}
+	function decode(str: string): string {
+		return decodeURIComponent(str);
+	}
 </script>
 
 <div class="main">
-	<textarea bind:this={area} bind:value maxlength={1000} placeholder="maxlength=1000"></textarea>
-	<QrCode {value} size={512} />
+	<textarea bind:value={inputValue} maxlength={500} placeholder="500"></textarea>
+	<QrCode value={data} size={512} />
 </div>
 
 <style lang="postcss">
 	:global(body) {
-		height: 100vh; /* For browsers that don't support CSS variables */
-		height: calc(var(--1dvh, 1vh) * 100); /* This is the "polyfill" */
-		height: 100dvh; /* This is for future browsers that support svh, dvh and lvh viewport units */
-
 		@apply m-0 w-full p-0;
 	}
 	textarea {
 		width: 100%;
 		height: 30vh;
-		@apply border-black border-2;
+		@apply border-2 border-black;
 	}
 	:global(.qrcode) {
 		@apply max-h-screen max-w-full;
 	}
 	.main {
-		@apply p-0 m-2 flex flex-col items-center justify-center;
+		@apply m-2 flex flex-col items-center justify-center p-0;
 	}
 </style>
