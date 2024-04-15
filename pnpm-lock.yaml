@@ -32,6 +32,9 @@ devDependencies:
   '@types/eslint':
     specifier: ^8.56.7
     version: 8.56.9
+  '@types/punycode':
+    specifier: ^2.1.4
+    version: 2.1.4
   autoprefixer:
     specifier: ^10.4.16
     version: 10.4.19(postcss@8.4.38)
@@ -68,6 +71,9 @@ devDependencies:
   prettier-plugin-tailwindcss:
     specifier: ^0.5.9
     version: 0.5.13(prettier-plugin-svelte@3.2.3)(prettier@3.2.5)
+  punycode:
+    specifier: ^2.3.1
+    version: 2.3.1
   svelte:
     specifier: ^4.2.7
     version: 4.2.14
@@ -719,6 +725,10 @@ packages:
 
   /@types/pug@2.0.10:
     resolution: {integrity: sha512-Sk/uYFOBAB7mb74XcpizmH0KOR2Pv3D2Hmrh1Dmy5BmK3MpdSa5kqZcg6EKBdklU0bFXX9gCfzvpnyUehrPIuA==}
+    dev: true
+
+  /@types/punycode@2.1.4:
+    resolution: {integrity: sha512-trzh6NzBnq8yw5e35f8xe8VTYjqM3NE7bohBtvDVf/dtUer3zYTLK1Ka3DG3p7bdtoaOHZucma6FfVKlQ134pQ==}
     dev: true
 
   /@types/semver@7.5.8:
