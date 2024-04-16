@@ -1,18 +1,19 @@
 <script lang="ts">
-	import { version } from '$app/environment';
-	import { page } from '$app/stores';
+	import { version, dev } from '$app/environment';
 	import { pushState, replaceState } from '$app/navigation';
 	import 'large-small-dynamic-viewport-units-polyfill';
-	import { Encoder, Numeric, Byte } from '@nuintun/qrcode';
+	import { Encoder, Byte } from '@nuintun/qrcode';
 	import * as lz from 'lz-string';
 	import GraphemeSplitter from 'grapheme-splitter';
 	import { onMount } from 'svelte';
 
 	let inputValue: string;
 	const splitter = new GraphemeSplitter();
-	const QREncoder = new Encoder({ version: 'Auto', level: 'L' });
+	const textEncode = (content: string) => new TextEncoder().encode(content);
+	const QREncoder = new Encoder({ version: 'Auto', level: 'L', encode: textEncode });
 	$: typing = false;
 	$: mode = 'URL';
+	const modes = ['URL', 'Raw'];
 
 	function readData() {
 		const url = new URL(globalThis.window.location.href);
@@ -49,16 +50,17 @@
 		const result = new Array<string>();
 		let temp = '';
 		strArray.forEach((v, i) => {
-			if (temp.length + v.length >= max || i === length - 1) {
+			if (temp.length + v.length >= max) {
 				result.push(temp);
 				temp = '';
 			}
 			temp += v;
 		});
+		if (temp.length > 0) {
+			result.push(temp);
+		}
 		return result;
 	}
-
-	const modes = ['URL', 'Raw'];
 </script>
 
 <div class="main">
@@ -68,7 +70,9 @@
 		on:blur={() => (typing = false)}
 	></textarea>
 	<div class="qrcode-list">
-		{#if !typing}
+		{#if !inputValue}
+			<div style="padding-left: 25px">Try to type something in textarea</div>
+		{:else if !typing}
 			{#each splitString(inputValue ?? '', 200) as string, index}
 				{#key mode}
 					<div class="qrcode">
@@ -78,7 +82,10 @@
 								title={`${index + 1}`}
 								width={200}
 								height={200}
-								src={QREncoder.encode(new Byte(writeData(dataEncode(string)))).toDataURL()}
+								src={QREncoder.encode(new Byte(writeData(dataEncode(string)))).toDataURL(
+									undefined,
+									{ margin: 4 }
+								)}
 							/>
 						{:else if mode === 'Raw'}
 							<img
@@ -86,14 +93,16 @@
 								title={`${index + 1}`}
 								width={200}
 								height={200}
-								src={QREncoder.encode(new Byte(string)).toDataURL()}
+								src={QREncoder.encode(new Byte(string)).toDataURL(undefined, { margin: 4 })}
 							/>
 						{/if}
 						<div>{index + 1}</div>
 						<hidden>
 							{(() => {
-								console.log(string);
-								console.log(dataEncode(string));
+								if (dev) {
+									console.log(string);
+									console.log(dataEncode(string));
+								}
 							})()}
 						</hidden>
 					</div>
@@ -129,10 +138,11 @@
 
 	textarea {
 		width: 100%;
-		@apply grow border-black p-2 font-serif text-base outline-none;
+		@apply grow bg-gray-50 p-2 font-serif text-base outline-none;
 	}
 
 	img {
+		image-rendering: pixelated;
 		@apply w-full grow;
 	}
 
@@ -145,14 +155,14 @@
 	}
 
 	.qrcode-list {
-		@apply flex h-fit min-h-[200px] w-full flex-row flex-nowrap items-center overflow-scroll bg-gray-100;
+		@apply flex h-fit min-h-[50px] w-full flex-row flex-nowrap items-center overflow-scroll bg-gray-100;
 	}
 
 	.main {
-		@apply flex h-full flex-col items-center justify-center rounded-xl;
+		@apply flex h-full flex-col items-center justify-center overflow-hidden rounded-xl;
 	}
 
 	.footer {
-		@apply flex h-auto w-full flex-row items-center justify-between p-2 text-xs;
+		@apply flex h-auto w-full flex-row items-center justify-between bg-gray-50 p-2 text-xs;
 	}
 </style>
