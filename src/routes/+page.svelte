@@ -1,26 +1,31 @@
 <script lang="ts">
 	import { version } from '$app/environment';
+	import { page } from '$app/stores';
+	import { pushState, replaceState } from '$app/navigation';
 	import 'large-small-dynamic-viewport-units-polyfill';
-	import svelteLogo from '$lib/images/svelte-logo.svg';
-	import { Encoder, Byte } from '@nuintun/qrcode';
+	import { Encoder, Numeric, Byte } from '@nuintun/qrcode';
 	import * as lz from 'lz-string';
-	import punycode from 'punycode';
+	import GraphemeSplitter from 'grapheme-splitter';
+	import { onMount } from 'svelte';
 
-	let inputValue: string = '';
-	const encoder = new Encoder({ version: 'Auto', level: 'L' });
+	let inputValue: string;
+	const splitter = new GraphemeSplitter();
+	const QREncoder = new Encoder({ version: 'Auto', level: 'L' });
 	$: typing = false;
 
 	function readData() {
 		const url = new URL(globalThis.window.location.href);
-		const data = decode(url.searchParams.get('data') ?? '');
+		const data = dataDecode(url.searchParams.get('data') ?? '');
 		inputValue = data;
 		if (data !== '') {
 			url.searchParams.delete('data');
-			window.history.replaceState(null, '', url);
+			pushState(url, {});
 		}
 	}
 
-	readData();
+	onMount(() => {
+		readData();
+	});
 
 	function writeData(data: string): string {
 		const url = new URL(globalThis.window.location.href);
@@ -28,12 +33,28 @@
 		return url.toString();
 	}
 
-	function encode(str: string): string {
+	function dataEncode(str: string): string {
 		return lz.compressToEncodedURIComponent(str);
 	}
 
-	function decode(str: string): string {
+	function dataDecode(str: string): string {
 		return lz.decompressFromEncodedURIComponent(str);
+	}
+
+	// 每 2000 个字符分割一次
+	function splitString(str: string, max: number): Array<string> {
+		const strArray = splitter.splitGraphemes(str);
+		const length = strArray.length;
+		const result = new Array<string>();
+		let temp = '';
+		strArray.forEach((v, i) => {
+			if (temp.length + v.length >= max || i === length - 1) {
+				result.push(temp);
+				temp = '';
+			}
+			temp += v;
+		});
+		return result;
 	}
 </script>
 
@@ -45,19 +66,20 @@
 	></textarea>
 	<div class="qrcode-list">
 		{#if !typing}
-			{#each (inputValue?.match(/.{1,700}/gms) ?? []).map((v, i, a) => `<PART ${i + 1}/${a.length}>\n\n` + v) as partData, index}
+			{#each splitString(inputValue ?? '', 200) as string, index}
 				<div class="qrcode">
 					<img
 						alt="QR Code"
 						title={`${index + 1}`}
 						width={200}
 						height={200}
-						src={String(encoder.encode(new Byte(writeData(encode(partData)))).toDataURL())}
+						src={QREncoder.encode(new Byte(writeData(dataEncode(string)))).toDataURL()}
 					/>
 					<div>{index + 1}</div>
 					<hidden>
 						{(() => {
-							console.log(partData);
+							console.log(string);
+							console.log(dataEncode(string));
 						})()}
 					</hidden>
 				</div>

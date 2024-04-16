@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>QRCode</title>
+	<title>QR Code</title>
 </svelte:head>
 
 <slot></slot>
