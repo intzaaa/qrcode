@@ -12,6 +12,7 @@
 	const splitter = new GraphemeSplitter();
 	const QREncoder = new Encoder({ version: 'Auto', level: 'L' });
 	$: typing = false;
+	$: mode = 'URL';
 
 	function readData() {
 		const url = new URL(globalThis.window.location.href);
@@ -56,6 +57,8 @@
 		});
 		return result;
 	}
+
+	const modes = ['URL', 'Raw'];
 </script>
 
 <div class="main">
@@ -67,29 +70,49 @@
 	<div class="qrcode-list">
 		{#if !typing}
 			{#each splitString(inputValue ?? '', 200) as string, index}
-				<div class="qrcode">
-					<img
-						alt="QR Code"
-						title={`${index + 1}`}
-						width={200}
-						height={200}
-						src={QREncoder.encode(new Byte(writeData(dataEncode(string)))).toDataURL()}
-					/>
-					<div>{index + 1}</div>
-					<hidden>
-						{(() => {
-							console.log(string);
-							console.log(dataEncode(string));
-						})()}
-					</hidden>
-				</div>
+				{#key mode}
+					<div class="qrcode">
+						{#if mode === 'URL'}
+							<img
+								alt="QR Code"
+								title={`${index + 1}`}
+								width={200}
+								height={200}
+								src={QREncoder.encode(new Byte(writeData(dataEncode(string)))).toDataURL()}
+							/>
+						{:else if mode === 'Raw'}
+							<img
+								alt="QR Code"
+								title={`${index + 1}`}
+								width={200}
+								height={200}
+								src={QREncoder.encode(new Byte(string)).toDataURL()}
+							/>
+						{/if}
+						<div>{index + 1}</div>
+						<hidden>
+							{(() => {
+								console.log(string);
+								console.log(dataEncode(string));
+							})()}
+						</hidden>
+					</div>
+				{/key}
 			{/each}
 		{:else}
 			<div style="padding-left: 25px">Make textarea lose focus to generate QR code</div>
 		{/if}
 	</div>
-	<div>
-		{version}
+	<div class="footer">
+		<div>
+			<select bind:value={mode}>
+				<summary>Mode</summary>
+				{#each modes as mode}
+					<option value={mode}>{mode}</option>
+				{/each}
+			</select>
+		</div>
+		<div>{version}</div>
 	</div>
 </div>
 
@@ -101,12 +124,12 @@
 		height: 100vh; /* For browsers that don't support CSS variables */
 		height: calc(var(--1dvh, 1vh) * 100); /* This is the "polyfill" */
 		height: 100dvh; /* This is for future browsers that support svh, dvh and lvh viewport units */
-		@apply m-0 w-full bg-gray-200 p-0;
+		@apply m-0 w-full bg-gray-200 p-2;
 	}
 
 	textarea {
 		width: 100%;
-		@apply grow border-black p-2 font-serif text-sm outline-none;
+		@apply grow border-black p-2 font-serif text-base outline-none;
 	}
 
 	img {
@@ -126,6 +149,10 @@
 	}
 
 	.main {
-		@apply flex h-full flex-col items-center justify-center  p-2;
+		@apply flex h-full flex-col items-center justify-center rounded-xl;
+	}
+
+	.footer {
+		@apply flex h-auto w-full flex-row items-center justify-between p-2 text-xs;
 	}
 </style>
